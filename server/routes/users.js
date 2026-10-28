@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const { body } = require('express-validator');
+const { verifyToken, isAdmin } = require('../middleware/auth');
+const users = require('../controllers/userController');
+router.use(verifyToken, isAdmin);
+router.get('/', users.list);
+router.post('/', [body('name').trim().notEmpty(), body('email').isEmail(), body('password').isLength({ min: 8 }), body('role').optional().isIn(['admin','user'])], users.create);
+router.put('/:id', [body('name').optional().trim().notEmpty(), body('role').optional().isIn(['admin','user']), body('isActive').optional().isBoolean()], users.update);
+router.delete('/:id', users.remove);
+module.exports = router;

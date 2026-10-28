@@ -1,0 +1,9 @@
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
+const { validationResult } = require('express-validator');
+function validate(req) { const errors = validationResult(req); if (!errors.isEmpty()) { const e = new Error(errors.array()[0].msg); e.status = 400; throw e; } }
+async function list(req, res, next) { try { const users = await User.find().select('-password').sort({ createdAt: -1 }); res.json({ success: true, data: users }); } catch (e) { next(e); } }
+async function create(req, res, next) { try { validate(req); const user = await User.create({ ...req.body, password: await bcrypt.hash(req.body.password, 10) }); res.status(201).json({ success: true, message: 'User created', data: await User.findById(user._id).select('-password') }); } catch (e) { next(e); } }
+async function update(req, res, next) { try { if (req.params.id === String(req.user._id) && req.body.role && req.body.role !== 'admin') return res.status(400).json({ success: false, message: 'You cannot demote your own account.' }); const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).select('-password'); if (!user) return res.status(404).json({ success: false, message: 'User not found.' }); res.json({ success: true, message: 'User updated', data: user }); } catch (e) { next(e); } }
+async function remove(req, res, next) { try { if (req.params.id === String(req.user._id)) return res.status(400).json({ success: false, message: 'You cannot delete your own account.' }); const user = await User.findByIdAndDelete(req.params.id); if (!user) return res.status(404).json({ success: false, message: 'User not found.' }); res.json({ success: true, message: 'User deleted', data: null }); } catch (e) { next(e); } }
+module.exports = { list, create, update, remove };

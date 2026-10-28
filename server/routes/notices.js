@@ -1,0 +1,12 @@
+const router = require('express').Router();
+const { body } = require('express-validator');
+const { verifyToken, isAdmin } = require('../middleware/auth');
+const notices = require('../controllers/noticeController');
+const rules = [body('title').trim().notEmpty().withMessage('Title is required'), body('description').trim().notEmpty().withMessage('Description is required'), body('category').optional().isIn(['Academic','Exam','Event','Holiday','General']), body('priority').optional().isIn(['Low','Normal','High'])];
+router.use(verifyToken);
+router.get('/', notices.list);
+router.get('/:id', notices.get);
+router.post('/', isAdmin, rules, notices.create);
+router.put('/:id', isAdmin, rules, notices.update);
+router.delete('/:id', isAdmin, notices.remove);
+module.exports = router;

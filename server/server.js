@@ -1,0 +1,17 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const connectDB = require('./config/db');
+const { notFound, errorHandler } = require('./middleware/errors');
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.get('/api/health', (req, res) => res.json({ success: true, message: 'Digital Notice Board API is running' }));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/notices', require('./routes/notices'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/stats', require('./routes/stats'));
+app.use(notFound);
+app.use(errorHandler);
+const port = process.env.PORT || 5000;
+connectDB().then(() => app.listen(port, () => console.log(`API listening on http://localhost:${port}`))).catch(error => { console.error('Database connection failed:', error.message); process.exit(1); });
