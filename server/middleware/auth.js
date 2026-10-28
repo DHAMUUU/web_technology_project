@@ -3,9 +3,10 @@ const User = require('../models/User');
 
 async function verifyToken(req, res, next) {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const [scheme, token] = (req.headers.authorization || '').split(' ');
+    if (scheme?.toLowerCase() !== 'bearer') return res.status(401).json({ success: false, message: 'Sign in to continue.' });
     if (!token) return res.status(401).json({ success: false, message: 'Sign in to continue.' });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     const user = await User.findById(decoded.id).select('-password');
     if (!user || !user.isActive) return res.status(401).json({ success: false, message: 'This account is unavailable.' });
     req.user = user;
