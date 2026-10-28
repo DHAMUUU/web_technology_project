@@ -8,6 +8,6 @@ router.patch('/me', [body('department').optional().isString().trim().isLength({ 
 router.use(isAdmin);
 router.get('/', users.list);
 router.post('/', [body('name').trim().isLength({ min: 2, max: 80 }), body('email').trim().isEmail().normalizeEmail(), body('password').matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/), body('role').optional().isIn(['admin','user']), body('department').optional().isString().trim().isLength({ max: 80 }), body('academicYear').optional().isString().trim().isLength({ max: 40 })], users.create);
-router.put('/:id', [body('name').optional().trim().notEmpty(), body('role').optional().isIn(['admin','user']), body('isActive').optional().isBoolean(), body('department').optional().isString().trim().isLength({ max: 80 }), body('academicYear').optional().isString().trim().isLength({ max: 40 })], users.update);
+router.put('/:id', [body('name').optional().trim().isLength({ min: 2, max: 80 }), body('email').optional().trim().isEmail().normalizeEmail(), body('role').optional().isIn(['admin','user']), body('isActive').optional().isBoolean(), body('department').optional().isString().trim().isLength({ max: 80 }), body('academicYear').optional().isString().trim().isLength({ max: 40 })], users.update);
 router.delete('/:id', users.remove);
 module.exports = router;

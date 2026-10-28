@@ -12,7 +12,7 @@ function validate(req) {
 }
 function safeSearch(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function editableFields(body) {
-  const keys = ['title', 'description', 'category', 'priority', 'expiryDate', 'isPinned', 'status', 'audience', 'departments', 'academicYears'];
+  const keys = ['title', 'summary', 'description', 'category', 'priority', 'issuingDepartment', 'coverImage', 'imageAlt', 'expiryDate', 'isPinned', 'status', 'audience', 'departments', 'academicYears'];
   return Object.fromEntries(keys.filter(key => Object.hasOwn(body, key)).map(key => [key, body[key]]));
 }
 function filtersFor(req) {
@@ -22,7 +22,7 @@ function filtersFor(req) {
   if (req.query.department && req.user.role === 'admin') filter.departments = { $in: [String(req.query.department).slice(0, 80)] };
   if (req.query.search) {
     const search = safeSearch(String(req.query.search).slice(0, 120));
-    const text = { $or: [{ title: { $regex: search, $options: 'i' } }, { description: { $regex: search, $options: 'i' } }] };
+    const text = { $or: [{ title: { $regex: search, $options: 'i' } }, { summary: { $regex: search, $options: 'i' } }, { description: { $regex: search, $options: 'i' } }] };
     if (filter.$and) filter.$and.push(text); else Object.assign(filter, text);
   }
   if (req.query.status && req.user.role === 'admin' && ['published', 'draft', 'archived'].includes(req.query.status)) filter.status = req.query.status;
@@ -61,7 +61,7 @@ async function list(req, res, next) {
       if (req.query.sort === 'priority') {
         const rows = await Notice.aggregate([
           { $match: filter },
-          { $addFields: { priorityRank: { $switch: { branches: [{ case: { $eq: ['$priority', 'High'] }, then: 3 }, { case: { $eq: ['$priority', 'Normal'] }, then: 2 }], default: 1 } } } },
+          { $addFields: { priorityRank: { $switch: { branches: [{ case: { $eq: ['$priority', 'High'] }, then: 4 }, { case: { $eq: ['$priority', 'Medium'] }, then: 3 }, { case: { $eq: ['$priority', 'Normal'] }, then: 2 }], default: 1 } } } },
           { $sort: { isPinned: -1, priorityRank: -1, createdAt: -1 } },
           { $skip: (page - 1) * limit }, { $limit: limit }
         ]);
@@ -86,6 +86,15 @@ async function list(req, res, next) {
       Notice.countDocuments({ ...publicFilter, expiryDate: { $gte: now, $lte: new Date(Date.now() + 7 * 86400000) } })
     ]);
     res.json({ success: true, data: await decorate(notices, req.user._id), pagination: { page, limit, total, pages: Math.ceil(total / limit) }, categoryCounts, pinnedCount, expiringSoon });
+  } catch (error) { next(error); }
+}
+async function featured(req, res, next) {
+  try {
+    const notice = await Notice.findOne({ ...visibleNoticeFilter(req.user), isPinned: true })
+      .populate('postedBy', 'name')
+      .sort({ createdAt: -1 });
+    const data = notice ? (await decorate([notice], req.user._id))[0] : null;
+    res.json({ success: true, data });
   } catch (error) { next(error); }
 }
 async function get(req, res, next) {
@@ -176,4 +185,4 @@ async function bookmarks(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { list, get, create, update, remove, toggleBookmark, markRead, unreadCount, bookmarks };
+module.exports = { list, featured, get, create, update, remove, toggleBookmark, markRead, unreadCount, bookmarks };

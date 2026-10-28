@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const { verifyToken, isAdmin } = require('../middleware/auth');
 const CampusEvent = require('../models/CampusEvent');
+const ImportantEvent = require('../models/ImportantEvent');
 const { audit, notifyEvent } = require('../utils/records');
 const { groupAudienceConditions } = require('../utils/audience');
 router.use(verifyToken);
@@ -21,9 +22,32 @@ router.get('/', async (req, res, next) => {
     const from = req.query.from ? new Date(req.query.from) : new Date(Date.now() - 30 * 86400000);
     const to = req.query.to ? new Date(req.query.to) : new Date(Date.now() + 365 * 86400000);
     if (Number.isNaN(from.valueOf()) || Number.isNaN(to.valueOf()) || to < from) return res.status(400).json({ success: false, message: 'Invalid event date range.' });
-    const filter = { startAt: { $gte: from, $lte: to }, ...visible(req.user) };
-    const events = await CampusEvent.find(filter).populate('notice', 'title').populate('createdBy', 'name').sort({ startAt: 1 }).limit(500);
+    const filter = req.query.notice
+      ? (mongoose.isValidObjectId(req.query.notice) ? { notice: req.query.notice, ...visible(req.user) } : null)
+      : req.query.upcoming === 'true'
+        ? { startAt: { $gte: new Date() }, ...visible(req.user) }
+        : { startAt: { $gte: from, $lte: to }, ...visible(req.user) };
+    if (!filter) return res.status(400).json({ success: false, message: 'Invalid notice reference.' });
+    const events = await CampusEvent.find(filter).populate('notice', 'title').populate('createdBy', 'name').sort({ startAt: 1 }).limit(2000);
     res.json({ success: true, data: events });
+  } catch (error) { next(error); }
+});
+router.get('/important', async (req, res, next) => {
+  try {
+    const marked = await ImportantEvent.find({ user: req.user._id }).distinct('event');
+    const visibleEvents = await CampusEvent.find({ _id: { $in: marked }, ...visible(req.user) }).select('_id').lean();
+    res.json({ success: true, data: visibleEvents.map(item => String(item._id)) });
+  } catch (error) { next(error); }
+});
+router.put('/:id/important', [body('important').isBoolean().withMessage('Important status must be true or false.')], async (req, res, next) => {
+  try {
+    check(req);
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ success: false, message: 'Event not found.' });
+    const event = await CampusEvent.findOne({ _id: req.params.id, ...visible(req.user) }).select('_id');
+    if (!event) return res.status(404).json({ success: false, message: 'Event not found.' });
+    if (req.body.important) await ImportantEvent.updateOne({ user: req.user._id, event: event._id }, { $setOnInsert: { user: req.user._id, event: event._id } }, { upsert: true });
+    else await ImportantEvent.deleteOne({ user: req.user._id, event: event._id });
+    res.json({ success: true, data: { isImportant: Boolean(req.body.important) } });
   } catch (error) { next(error); }
 });
 router.post('/', isAdmin, rules, async (req, res, next) => {
@@ -54,6 +78,7 @@ router.delete('/:id', isAdmin, async (req, res, next) => {
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ success: false, message: 'Event not found.' });
     const event = await CampusEvent.findByIdAndDelete(req.params.id);
     if (!event) return res.status(404).json({ success: false, message: 'Event not found.' });
+    await ImportantEvent.deleteMany({ event: event._id });
     await audit(req.user, 'event.deleted', 'event', event._id, event.title);
     res.json({ success: true, message: 'Event deleted.' });
   } catch (error) { next(error); }

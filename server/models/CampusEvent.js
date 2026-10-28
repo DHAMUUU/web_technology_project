@@ -6,6 +6,8 @@ const schema = new mongoose.Schema({
   startAt: { type: Date, required: true },
   endAt: { type: Date, default: null },
   notice: { type: mongoose.Schema.Types.ObjectId, ref: 'Notice', default: null },
+  isDemo: { type: Boolean, default: false, index: true },
+  demoKey: { type: String, trim: true, unique: true, sparse: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   departments: [{ type: String, trim: true }],
   academicYears: [{ type: String, trim: true }]

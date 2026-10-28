@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, BookOpen, CalendarDays, ChevronRight, CircleUserRound, FileText, LayoutDashboard, LogOut, Menu, Moon, Search, Settings2, Shield, Sun, Users, X, Bookmark, ClipboardList, House } from 'lucide-react';
+import { Bell, BookOpen, CalendarDays, ChevronRight, CircleUserRound, FileText, LayoutDashboard, LogOut, Menu, Moon, Search, Settings2, Shield, Sun, Users, X, Bookmark, ClipboardList, House, ListTodo } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
@@ -8,6 +8,7 @@ const paths = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/notices', label: 'Notice board', icon: FileText },
   { to: '/calendar', label: 'Academic calendar', icon: CalendarDays },
+  { to: '/planner', label: 'My planner', icon: ListTodo },
   { to: '/bookmarks', label: 'My bookmarks', icon: Bookmark },
   { to: '/notifications', label: 'Notifications', icon: Bell },
 ];
@@ -16,7 +17,7 @@ const adminPaths = [
   { to: '/admin/users', label: 'People', icon: Users },
   { to: '/admin/audit', label: 'Audit log', icon: ClipboardList },
 ];
-const titles = { '/dashboard': 'Overview', '/notices': 'Notice board', '/calendar': 'Academic calendar', '/bookmarks': 'My bookmarks', '/notifications': 'Notifications', '/profile': 'Profile & settings', '/change-password': 'Change password', '/admin/notices': 'Manage notices', '/admin/users': 'People', '/admin/audit': 'Audit log' };
+const titles = { '/dashboard': 'Overview', '/notices': 'Notice board', '/calendar': 'Academic calendar', '/planner': 'My planner', '/bookmarks': 'My bookmarks', '/notifications': 'Notifications', '/profile': 'Profile & settings', '/change-password': 'Change password', '/admin/notices': 'Manage notices', '/admin/users': 'People', '/admin/audit': 'Audit log' };
 
 function Sidebar({ onNavigate }) {
   const { user, logout } = useAuth();

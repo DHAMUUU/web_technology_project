@@ -1,10 +1,16 @@
 const mongoose = require('mongoose');
 const noticeSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
+  summary: { type: String, trim: true, maxlength: 320, default: '' },
   description: { type: String, required: true, trim: true },
-  category: { type: String, enum: ['Academic', 'Exam', 'Event', 'Holiday', 'General'], default: 'General' },
-  priority: { type: String, enum: ['Low', 'Normal', 'High'], default: 'Normal' },
+  category: { type: String, enum: ['Academic', 'Exam', 'Event', 'Holiday', 'General', 'Technical Event', 'Hackathon', 'Workshop', 'Examination', 'Placement', 'Sports'], default: 'General' },
+  priority: { type: String, enum: ['Low', 'Normal', 'Medium', 'High'], default: 'Normal' },
   postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  issuingDepartment: { type: String, trim: true, maxlength: 100, default: '' },
+  coverImage: { type: String, trim: true, maxlength: 300, default: '' },
+  imageAlt: { type: String, trim: true, maxlength: 250, default: '' },
+  isDemo: { type: Boolean, default: false, index: true },
+  demoKey: { type: String, trim: true, unique: true, sparse: true },
   expiryDate: { type: Date, default: null },
   isPinned: { type: Boolean, default: false },
   status: { type: String, enum: ['published', 'draft', 'archived'], default: 'published', index: true },

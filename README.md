@@ -43,14 +43,14 @@ Open the Vite address, normally `http://localhost:5173`. The API health endpoint
 
 ## Demo data
 
-`npm run seed` safely adds demo accounts and sample notices when they are missing. It does not delete or reset existing accounts or notices. The seeded demo passwords are intended only for a disposable development database; change or remove those accounts before using a shared database.
+`npm run seed:demo` inserts or updates 15 clearly labeled illustrative sample notices and creates one linked calendar event for each notice. Sample event dates are generated relative to the seeding date and labeled as illustrative in the notice details and calendar. Run it from `server/` after configuring `MONGO_URI` and creating an active account. The notices and events are attributed to an existing active account; the script does not create accounts, delete records, or reset the database. Each sample uses a stable demo key, so rerunning the command updates those samples instead of duplicating them. Sample poster artwork is stored locally in `client/public/images/demo-notices/` and served at `/images/demo-notices/`.
 
 ## Features
 
 - Responsive CampusHub layout, persistent light/dark theme, searchable notices, category/priority filters, pagination, and list/grid views.
-- Notice drafts, archive/publish state, expiry, pins, department/year targeting, and server-side audience filtering.
-- Profile group preferences, per-user bookmarks, unique read receipts, unread filtering, and persistent in-app notifications.
-- Month calendar with agenda; administrators can create and remove events.
+- Notice drafts, archive/publish state, expiry, pins, department/year targeting, server-side audience filtering, summaries, issuing departments, and local cover artwork.
+- Profile group preferences, per-user bookmarks, unique read receipts, unread filtering, persistent in-app notifications, and a private task planner for assignments and study goals.
+- Academic calendar shows the full upcoming event list and month view; members can mark important events privately, and administrators can create or remove events.
 - Admin dashboard with database-backed category/activity metrics, member administration, and a read-only audit log.
 - Rate-limited authentication routes, bcrypt password hashing, JWT role checks, input validation, bounded request bodies, Helmet headers, restricted CORS, and allowlisted updates.
 
@@ -64,12 +64,17 @@ Protected routes use `Authorization: Bearer <token>`. Existing route contracts f
 | PUT | `/api/auth/change-password` | Signed in | Change password |
 | GET, PATCH | `/api/users/me` | Signed in | Read or update profile group preferences |
 | GET | `/api/notices` | Signed in | Search, filter, sort, and paginate visible notices |
+| GET | `/api/notices/featured` | Signed in | Get the newest visible pinned notice for the featured board section |
 | GET | `/api/notices/:id` | Signed in | Read a notice and create its read receipt |
 | POST | `/api/notices/:id/read` | Signed in | Mark a notice read |
 | PUT | `/api/notices/:id/bookmark` | Signed in | Toggle a bookmark |
 | GET | `/api/notices/bookmarks`, `/api/notices/unread/count` | Signed in | Read personal bookmarks and unread count |
 | POST, PUT, DELETE | `/api/notices` and `/api/notices/:id` | Admin | Manage notices |
 | GET, POST, PUT, DELETE | `/api/events` | Read signed in; writes admin | Academic calendar |
+| GET, POST | `/api/tasks` | Signed in | List or create personal planner tasks |
+| PATCH, DELETE | `/api/tasks/:id` | Signed in, task owner | Complete or remove a personal task |
+| GET | `/api/events/important` | Signed in | List event IDs marked important by the current user |
+| PUT | `/api/events/:id/important` | Signed in | Mark a visible campus event important or remove the mark |
 | GET, PATCH, POST | `/api/notifications` | Signed in | List and mark notifications read |
 | GET | `/api/audit` | Admin | Read administrative audit history |
 | GET | `/api/stats` | Admin | Dashboard analytics |
