@@ -41,6 +41,17 @@ npm run dev
 
 Open the Vite address, normally `http://localhost:5173`. The API health endpoint is `http://localhost:5000/api/health`. Set `VITE_API_URL` in `client/.env` to override the default API base URL.
 
+## Deploy on Vercel
+
+The root `vercel.json` defines a Vite `client` service and an Express `server` service. The client is public at `/`; requests under `/api/*` are routed to the API service on the same domain. The browser uses the relative `/api` URL, so do not set `VITE_API_URL` on Vercel. The client calls the public API path from the browser; no service-to-service binding is needed.
+
+Import this repository as a Vercel multi-service project and add these server environment variables for Production and Preview:
+
+- `MONGO_URI`: a MongoDB Atlas connection string.
+- `JWT_SECRET`: a unique random value with at least 32 characters.
+
+`CLIENT_ORIGIN` is only needed if you intentionally call the API cross-origin; same-origin `/api` requests are allowed automatically. `VITE_API_URL` is only needed when using a separate API URL outside the Vite development proxy.
+
 ## Demo data
 
 `npm run seed:demo` inserts or updates 15 clearly labeled illustrative sample notices and creates one linked calendar event for each notice. Sample event dates are generated relative to the seeding date and labeled as illustrative in the notice details and calendar. Run it from `server/` after configuring `MONGO_URI` and creating an active account. The notices and events are attributed to an existing active account; the script does not create accounts, delete records, or reset the database. Each sample uses a stable demo key, so rerunning the command updates those samples instead of duplicating them. Sample poster artwork is stored locally in `client/public/images/demo-notices/` and served at `/images/demo-notices/`.
