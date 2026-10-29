@@ -7,56 +7,86 @@ CampusHub is a campus communication platform built on the existing React, Vite, 
 - Node.js 18 or newer
 - A MongoDB database, local or MongoDB Atlas
 
-## Run locally
+## Start the website locally
 
-Create `server/.env` from the example, then configure the database URI and a private JWT secret:
+1. Install Node.js 18 or newer and make sure MongoDB is available locally or through MongoDB Atlas.
+2. Create the server environment file and install its dependencies:
+
+   ```bash
+   cd server
+   npm install
+   cp .env.example .env
+   ```
+
+3. Open `server/.env` and set `MONGO_URI` and `JWT_SECRET`. Generate a private JWT secret with:
+
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+   ```
+
+   For Atlas, copy the URI from **Database → Connect → Drivers**, replace its placeholders, and use it as `MONGO_URI`. Example format:
+
+   ```dotenv
+   MONGO_URI=mongodb+srv://<database-user>:<database-password>@<cluster-host>/<database-name>
+   ```
+
+   Allow the computer running the API in Atlas **Security → Network Access**. Keep the completed URI and JWT secret private. Do not commit `server/.env`; it is git-ignored.
+
+4. Start the API in the `server` directory:
+
+   ```bash
+   npm run dev
+   ```
+
+5. Open a second terminal at the repository root, go to `client/`, and start the website:
+
+   ```bash
+   cd client
+   npm install
+   npm run dev
+   ```
+
+6. Open [http://localhost:5173](http://localhost:5173). The API health endpoint is [http://localhost:5000/api/health](http://localhost:5000/api/health). The Vite development server forwards `/api` requests to the local API. To add the 15 sample notices and calendar events to the configured database, create an account first, then run `npm run seed:demo` from `server/`.
+
+## Deploy the website to Vercel
+
+The live site is [https://web-technoloy-project.vercel.app](https://web-technoloy-project.vercel.app). This repository deploys two Vercel services from the repository root: the Vite website in `client/` and the Express API in `server/`. The root `vercel.json` routes `/api/*` requests to the API and all other paths to the website.
+
+### First-time setup
+
+1. Import this GitHub repository (`adhishm-0/web_technoloy_project`) at [vercel.com/new](https://vercel.com/new), or use the Vercel CLI steps below.
+2. Keep the Vercel project root at the **repository root**. Do not set it to `client/`; the root `vercel.json` is needed to deploy and route both services.
+3. In the Vercel project’s **Settings → Environment Variables**, add these variables for both **Production** and **Preview**:
+   - `MONGO_URI`: the MongoDB Atlas connection URI.
+   - `JWT_SECRET`: a unique random value with at least 32 characters. Generate one with the command in the local setup steps above.
+4. In Atlas **Security → Network Access**, allow connections from Vercel. Vercel uses dynamic outbound IPs by default, so the API will time out unless Atlas accepts its connection. Vercel Static IPs (Pro or Enterprise) let you allowlist fixed addresses. The broad fallback, `0.0.0.0/0`, lets any public IP attempt a connection; database authentication is still required. Keep the database user restricted and never put the URI in GitHub or this README.
+5. Deploy from the Vercel dashboard. The API uses the same `/api` domain as the website, so leave `VITE_API_URL` unset. `CLIENT_ORIGIN` is only needed for intentional cross-origin API calls.
+
+### Deploy with the Vercel CLI
+
+From the repository root, install and sign in to the CLI once:
 
 ```bash
-cd server
-npm install
-cp .env.example .env
+npm install --global vercel
+vercel login
+vercel link
 ```
 
-Generate a JWT signing secret with:
+When linking, select the existing `web-technoloy-project` project. If asked for its root directory, use the repository root. Add `MONGO_URI` and `JWT_SECRET` for Production and Preview when prompted:
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+vercel env add MONGO_URI
+vercel env add JWT_SECRET
 ```
 
-Paste the generated value after `JWT_SECRET=` in `server/.env`. For Atlas, copy the URI from **Database → Connect → Drivers**, replace the username, password, and cluster placeholders, and set it as `MONGO_URI` in `server/.env`:
-
-```dotenv
-MONGO_URI=mongodb+srv://<database-user>:<database-password>@<cluster-host>/<database-name>
-```
-
-Allow your IP in **Security → Network Access**. Keep the completed URI private; never put credentials in this README or commit `server/.env` (it is git-ignored). The API only accepts browser requests from the origins listed in `CLIENT_ORIGIN`.
-
-Start the API:
+Create a preview deployment, then deploy it to production:
 
 ```bash
-npm run dev
+vercel
+vercel --prod
 ```
 
-In another terminal:
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-Open the Vite address, normally `http://localhost:5173`. The API health endpoint is `http://localhost:5000/api/health`. Set `VITE_API_URL` in `client/.env` to override the default API base URL.
-
-## Deploy on Vercel
-
-The root `vercel.json` defines a Vite `client` service and an Express `server` service. The client is public at `/`; requests under `/api/*` are routed to the API service on the same domain. The browser uses the relative `/api` URL, so do not set `VITE_API_URL` on Vercel. The client calls the public API path from the browser; no service-to-service binding is needed.
-
-Import this repository as a Vercel multi-service project and add these server environment variables for Production and Preview:
-
-- `MONGO_URI`: a MongoDB Atlas connection string.
-- `JWT_SECRET`: a unique random value with at least 32 characters.
-
-`CLIENT_ORIGIN` is only needed if you intentionally call the API cross-origin; same-origin `/api` requests are allowed automatically. `VITE_API_URL` is only needed when using a separate API URL outside the Vite development proxy.
+After changing Vercel environment variables, redeploy for the new values to take effect. Demo sample records are stored in MongoDB, so they appear on Vercel when its `MONGO_URI` points to the database containing those records.
 
 ## Demo data
 
