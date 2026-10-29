@@ -23,7 +23,13 @@ Generate a JWT signing secret with:
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ```
 
-Paste the generated value after `JWT_SECRET=` in `server/.env`. For Atlas, use the URI from **Database → Connect → Drivers** and allow your IP in **Security → Network Access**. Keep the completed URI private. The API only accepts browser requests from the origins listed in `CLIENT_ORIGIN`.
+Paste the generated value after `JWT_SECRET=` in `server/.env`. For Atlas, copy the URI from **Database → Connect → Drivers**, replace the username, password, and cluster placeholders, and set it as `MONGO_URI` in `server/.env`:
+
+```dotenv
+MONGO_URI=mongodb+srv://<database-user>:<database-password>@<cluster-host>/<database-name>
+```
+
+Allow your IP in **Security → Network Access**. Keep the completed URI private; never put credentials in this README or commit `server/.env` (it is git-ignored). The API only accepts browser requests from the origins listed in `CLIENT_ORIGIN`.
 
 Start the API:
 
